@@ -27,6 +27,32 @@ Stage 2: AgentOps  ->  LLM Insight Generation -> LLM Decision Support Agent
 Stage 3: Decision  ->  Human-in-the-Loop -> Dashboard / Alerts -- this will be an LLM model which make the decision 
 ```
 
+## Data Description
+
+| Column Name | Description | Example Values |
+|---|---|---|
+| patient_id | Unique identifier assigned to each patient | P12345 |
+| gender | Gender of the patient | Male, Female, Other |
+| age | Age of the patient (in years) | 35, 62 |
+| visit_date | Date when the patient visited the hospital/clinic | 2023-07-14 |
+| department | Hospital department where the patient was seen | Cardiology, Oncology, Emergency |
+| physician_id | Unique identifier for the attending physician | DR4567 |
+| diagnosis | Primary diagnosis assigned during the visit (ICD code or text) | Hypertension, Diabetes Mellitus |
+| visit_type | Type of visit | Outpatient, Inpatient, Emergency |
+| visit_reason | Reason for the visit as stated by the patient or recorded | Chest pain, Routine checkup |
+| appointment_id | Unique identifier for the appointment (helps detect duplicate or multiple claims) | A78901 |
+| is_emergency | Indicates if the visit was marked as an emergency | Yes/No or 1/0 |
+| insurance_id | Unique identifier of the patient's insurance provider | INS8765 |
+| payer_name | Name of the payer/insurance company responsible for covering charges | Medicare, BlueCross, Private |
+| payer_type | Type of payer (public, private, self-pay, government) | Private, Government, Self |
+| claim_status | Current status of the insurance claim | Pending, Approved, Rejected, Paid |
+| charge_amount_USD | Total charges billed for the visit (in US Dollars) — **primary anomaly reference column** | 500.00, 3500.75 |
+| payment_amount_USD | Actual payment received from payer/patient (in US Dollars) | 450.00, 0.00 |
+| admission_date | Date of hospital admission (for inpatients) | 2023-07-12 |
+| discharge_date | Date of hospital discharge (for inpatients) | 2023-07-15 |
+
+> `charge_amount_USD` is the primary reference column used for threshold-based anomaly evaluation in Stage 1.
+
 ## Stage 1 - MLOps (Current Focus)
 
 | Module              | Purpose                                              |
