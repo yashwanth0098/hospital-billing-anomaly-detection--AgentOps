@@ -55,3 +55,5 @@ src/stage_1_mlops/
     model_registry/       # SageMaker Model Registry integration
     inference/            # Predictor, anomaly scorer
 ```
+
+<!-- pushed from yashwanth0098 -->
