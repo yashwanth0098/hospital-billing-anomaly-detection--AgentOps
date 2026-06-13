@@ -1,6 +1,16 @@
 # Hospital Billing Anomaly Detection
 
-AWS-deployed system for detecting anomalies in hospital billing data using a three-stage pipeline.
+## Problem Statement
+
+Hospitals generate large amounts of structured data from patient visits, admissions, and billing transactions. While most records follow expected clinical and financial patterns, some may represent anomalies such as incorrect charges, fraudulent claims, unusual patient-diagnosis mismatches, or abnormal physician billing behavior.
+
+Detecting these anomalies manually is time-consuming, error-prone, and does not scale with the volume of modern hospital operations. There is a need for an automated, intelligent system that can continuously monitor billing data, flag suspicious records, generate human-readable insights, and support decision-makers in taking corrective action — all without requiring pre-labeled training data.
+
+This project addresses that need through a three-stage AWS-deployed pipeline:
+
+- **Stage 1 — MLOps:** Unsupervised anomaly detection using Isolation Forest on raw billing records, with threshold-based scoring anchored to `charge_amount_USD`, fully orchestrated via Amazon SageMaker Pipelines.
+- **Stage 2 — AgentOps:** LLM-based insight generation (Amazon Bedrock) that explains each detected anomaly in context, backed by a decision-support agent with access to billing policy tools.
+- **Stage 3 — Decision LLM:** An LLM model that makes the final decision — flag, escalate, or close — feeding results to a human-review dashboard and alert system.
 
 ## Architecture
 
