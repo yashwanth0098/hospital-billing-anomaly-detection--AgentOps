@@ -1,0 +1,55 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+*.whl
+
+# Environments
+.env
+.env.*
+!.env.example
+venv/
+.venv/
+env/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# AWS credentials (never commit)
+*.pem
+credentials
+.aws/
+
+# ML artifacts (stored in S3, not git)
+*.pkl
+*.joblib
+*.h5
+*.pt
+*.onnx
+mlruns/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Terraform state (use remote backend)
+*.tfstate
+*.tfstate.backup
+.terraform/
