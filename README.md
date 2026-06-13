@@ -14,7 +14,7 @@ Stage 1: MLOps     ->  Data Preprocessing -> Anomaly Detection Model -> Structur
 Stage 2: AgentOps  ->  LLM Insight Generation -> LLM Decision Support Agent
         |
         v
-Stage 3: Decision  ->  Human-in-the-Loop -> Dashboard / Alerts
+Stage 3: Decision  ->  Human-in-the-Loop -> Dashboard / Alerts -- this will be an LLM model which make the decision 
 ```
 
 ## Stage 1 - MLOps (Current Focus)
@@ -23,8 +23,8 @@ Stage 3: Decision  ->  Human-in-the-Loop -> Dashboard / Alerts
 |---------------------|------------------------------------------------------|
 | data_ingestion      | Ingest raw billing data from S3, validate schema     |
 | data_preprocessing  | Clean, engineer features, prepare for modeling       |
-| model_training      | Train Isolation Forest / Autoencoder / XGBoost       |
-| model_evaluation    | Evaluate model with anomaly-specific metrics         |
+| model_training      | Train Isolation Forest (unsupervised, no labels required)            |
+| model_evaluation    | Threshold-based evaluation anchored to charge_amount_USD — anomaly score distribution, IQR/z-score thresholds, contamination rate analysis |
 | model_registry      | Register approved models in SageMaker Model Registry |
 | inference           | Score new records via SageMaker endpoint             |
 
@@ -50,8 +50,8 @@ python pipelines/sagemaker_pipelines/training_pipeline.py
 src/stage_1_mlops/
     data_ingestion/       # S3 connector, schema, validator
     data_preprocessing/   # Cleaner, feature engineering, preprocessor
-    model_training/       # Trainer, hyperparameter tuning, model implementations
-    model_evaluation/     # Evaluator, metrics
+    model_training/       # Trainer, hyperparameter tuning, Isolation Forest
+    model_evaluation/     # Threshold analyzer (charge_amount_USD), score distribution
     model_registry/       # SageMaker Model Registry integration
     inference/            # Predictor, anomaly scorer
 ```
