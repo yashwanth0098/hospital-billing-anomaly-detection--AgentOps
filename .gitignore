@@ -28,6 +28,7 @@ credentials
 .aws/
 
 # ML artifacts (stored in S3, not git)
+artifacts/
 *.pkl
 *.joblib
 *.h5
@@ -35,8 +36,14 @@ credentials
 *.onnx
 mlruns/
 
+# Logs
+logs/
+
+# Raw data (never commit patient records)
+src/stage_1_mlops/input_excel/
+
 # IDE
-.vscode/
+.vscode/*.code-workspace
 .idea/
 *.swp
 

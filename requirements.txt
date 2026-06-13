@@ -1,0 +1,51 @@
+# =============================================================================
+# Unified requirements — covers all three phases:
+#   Phase 1 : MLOps
+#   Phase 2 : AgentOps
+#   Phase 3 : Decision Making LLM
+# =============================================================================
+
+# ── Phase 1 : MLOps ──────────────────────────────────────────────────────────
+
+# Core data
+pandas>=2.2.2
+numpy>=1.26.4
+openpyxl>=3.1.5             # Excel / .xlsx ingestion
+
+# Machine learning & anomaly detection
+scikit-learn>=1.5.1
+pyod>=1.1.0                 # Unsupervised anomaly detection algorithms
+scipy>=1.13.0               # JSD + PSI drift detection (also a scikit-learn dep)
+
+# Experiment tracking & model registry
+mlflow>=3.1.3
+
+# AWS / cloud storage
+boto3>=1.34.69              # S3 read/write
+
+# Config & validation
+pydantic>=2.11.7
+python-dotenv>=0.21.0
+pyyaml>=6.0.1
+
+# ── Phase 2 : AgentOps ───────────────────────────────────────────────────────
+
+agentops>=0.3.0             # Agent run monitoring & tracing
+langchain>=0.2.0
+langgraph>=0.2.0            # Multi-step agent graph orchestration
+
+# ── Phase 3 : Decision Making LLM ────────────────────────────────────────────
+
+# Free local LLM via Ollama (no API key, runs on your machine)
+# Setup: install Ollama from https://ollama.com, then run: ollama pull llama3.2
+ollama>=0.3.0               # Python client for local Ollama models
+
+# ── API Serving (shared) ──────────────────────────────────────────────────────
+
+fastapi>=0.116.1
+uvicorn>=0.35.0
+
+# ── Observability & utilities (shared) ───────────────────────────────────────
+
+loguru>=0.7.0               # Structured logging across all phases
+rich>=13.0.0                # CLI / console output formatting
