@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Decision Brief — {{ report.run_id }}</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body { background: #f0f2f5; }
+
+    /* ── Header ── */
+    .decision-header { padding: 1.75rem 0; color: #fff; }
+    .risk-critical { background: linear-gradient(135deg, #7b0000, #c0392b); }
+    .risk-high     { background: linear-gradient(135deg, #7d3c00, #d35400); }
+    .risk-medium   { background: linear-gradient(135deg, #7d6608, #d4ac0d); }
+    .risk-low      { background: linear-gradient(135deg, #1a5e20, #27ae60); }
+    .decision-header h1 { font-size: 1.4rem; font-weight: 700; margin-bottom: .2rem; }
+    .decision-header .meta { color: rgba(255,255,255,.75); font-size: .85rem; }
+    .risk-badge { font-size: .8rem; font-weight: 700; letter-spacing: 1px;
+                  padding: .3rem .9rem; border-radius: 20px; background: rgba(255,255,255,.2);
+                  border: 1px solid rgba(255,255,255,.4); }
+    .btn-nav { border: 1px solid rgba(255,255,255,.35); color: #fff; background: transparent;
+               border-radius: 6px; padding: .35rem .9rem; font-size: .85rem; text-decoration: none; }
+    .btn-nav:hover { background: rgba(255,255,255,.12); color: #fff; }
+
+    /* ── Section cards ── */
+    .section-card { border: none; border-radius: 12px;
+                    box-shadow: 0 2px 12px rgba(0,0,0,.07); margin-bottom: 1.5rem; }
+    .section-card .card-header { background: transparent; border-bottom: 1px solid #e9ecef;
+                                  font-weight: 700; font-size: .95rem; padding: 1rem 1.4rem; }
+    .section-card .card-body   { padding: 1.2rem 1.4rem; }
+
+    /* ── Summary stat boxes ── */
+    .stat-box { border-radius: 10px; padding: 1rem 1.2rem; text-align: center; }
+    .stat-box .num { font-size: 2rem; font-weight: 800; line-height: 1; }
+    .stat-box .lbl { font-size: .75rem; text-transform: uppercase; letter-spacing: .6px; margin-top: .2rem; }
+    .box-actions { background: #fef3e2; color: #935116; }
+    .box-dept    { background: #eaf2ff; color: #154360; }
+    .box-payer   { background: #f9ebea; color: #7b241c; }
+    .box-risk    { background: #f4ecf7; color: #6c3483; }
+
+    /* ── Situation brief (what LLM read) ── */
+    .brief-box { background: #1e1e2e; color: #cdd6f4; border-radius: 10px;
+                 padding: 1.2rem 1.4rem; font-family: monospace; font-size: .8rem;
+                 white-space: pre-wrap; line-height: 1.65; max-height: 420px; overflow-y: auto; }
+    .brief-section-marker { color: #89dceb; font-weight: 700; }
+
+    /* ── Immediate actions ── */
+    .action-card { border-radius: 10px; border: 1px solid #fde8c8;
+                   background: #fff; margin-bottom: .85rem; overflow: hidden; }
+    .action-header { background: #fef6ec; padding: .65rem 1.1rem;
+                     display: flex; align-items: center; gap: .75rem; }
+    .action-priority { width: 28px; height: 28px; border-radius: 50%;
+                       background: #e67e22; color: #fff; font-weight: 800;
+                       font-size: .85rem; display: flex; align-items: center;
+                       justify-content: center; flex-shrink: 0; }
+    .action-case  { font-weight: 700; font-size: .9rem; color: #c0392b; }
+    .action-owner { font-size: .78rem; color: #666;
+                    background: #eee; border-radius: 12px;
+                    padding: .15rem .6rem; margin-left: auto; }
+    .action-body  { padding: .8rem 1.1rem; }
+    .action-label { font-size: .72rem; text-transform: uppercase;
+                    letter-spacing: .5px; color: #888; margin-bottom: .15rem; }
+    .action-text  { font-size: .88rem; color: #222; line-height: 1.5; }
+
+    /* ── Department / Payer directives ── */
+    .directive-card { border-radius: 10px; background: #fff;
+                      border: 1px solid #d6eaf8; margin-bottom: .85rem; overflow: hidden; }
+    .directive-header { background: #eaf4fb; padding: .6rem 1.1rem;
+                        font-weight: 700; font-size: .9rem; color: #1a5276;
+                        display: flex; justify-content: space-between; align-items: center; }
+    .directive-header.payer-hdr { background: #fdf2f8; color: #76448a;
+                                   border-color: #f5cfe4; }
+    .directive-body { padding: .8rem 1.1rem; }
+    .timeline-badge { font-size: .75rem; font-weight: 600; padding: .2rem .65rem;
+                      border-radius: 12px; background: #d4efdf; color: #1e8449; }
+
+    /* ── Pipeline feedback ── */
+    .health-healthy { color: #1e8449; }
+    .health-review  { color: #b7770d; }
+    .health-retrain { color: #922b21; }
+    .obs-item { background: #f8f9fa; border-radius: 6px; padding: .5rem .8rem;
+                font-size: .85rem; margin-bottom: .4rem; }
+    .obs-item.flag { background: #fef9e7; color: #9a7d0a; }
+
+    /* ── Executive summary ── */
+    .exec-box { background: #1a1a2e; color: #e8f4fd; border-radius: 10px;
+                padding: 1.4rem 1.6rem; font-size: .95rem; line-height: 1.75;
+                border-left: 4px solid #2e86c1; }
+  </style>
+</head>
+<body>
+
+{% set brief = report.decision_brief %}
+{% set ds    = report.decision_summary %}
+{% set risk  = brief.risk_level | default("HIGH") %}
+
+<!-- ── Header ─────────────────────────────────────────────────────────────── -->
+<div class="decision-header risk-{{ risk | lower }}">
+  <div class="container d-flex justify-content-between align-items-start flex-wrap gap-2">
+    <div>
+      <h1>Compliance Decision Brief — {{ report.run_date }}</h1>
+      <div class="meta">
+        Run: <code style="color:#fff;opacity:.9">{{ report.run_id }}</code>
+        &nbsp;|&nbsp; Model: <code style="color:#fff;opacity:.9">{{ report.model }}</code>
+        &nbsp;|&nbsp; Stage 3 &mdash; Stakeholder Decision Making
+      </div>
+    </div>
+    <div class="d-flex align-items-center gap-2 mt-1">
+      <span class="risk-badge">{{ risk }}</span>
+      <a href="/report/{{ report.run_id }}" class="btn-nav">&#8592; Stage 2 Report</a>
+      <a href="/" class="btn-nav">Home</a>
+    </div>
+  </div>
+</div>
+
+<div class="container mt-4">
+
+  <!-- ── How it works (pipeline trace) ─────────────────────────────────────── -->
+  <div class="alert alert-light border mb-4" style="border-radius:12px">
+    <div class="d-flex align-items-center gap-2 mb-1">
+      <strong>How this decision was made</strong>
+    </div>
+    <div class="small text-muted" style="line-height:1.7">
+      <span class="badge bg-secondary me-1">Stage 1</span> ML anomaly scores (Isolation Forest ×2 + business rules) produced a tiered batch.
+      <span class="mx-1">&rarr;</span>
+      <span class="badge bg-secondary me-1">Stage 2</span> AgentOps structured the flagged records into a daily situation brief.
+      <span class="mx-1">&rarr;</span>
+      <span class="badge bg-warning text-dark me-1">Stage 3</span>
+      The full brief was sent to <strong>{{ report.model }}</strong> (local LLM via Ollama) in a single prompt.
+      The LLM read it as a <strong>Senior Compliance Officer</strong> and produced this complete decision brief covering
+      every flagged case, department, payer, and a pipeline health recommendation.
+    </div>
+  </div>
+
+  <!-- ── Decision summary stat boxes ───────────────────────────────────────── -->
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+      <div class="stat-box box-risk h-100">
+        <div class="num">{{ risk }}</div>
+        <div class="lbl">Risk Level</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="stat-box box-actions h-100">
+        <div class="num">{{ ds.immediate_action_count | default(0) }}</div>
+        <div class="lbl">Immediate Actions</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="stat-box box-dept h-100">
+        <div class="num">{{ ds.department_directive_count | default(0) }}</div>
+        <div class="lbl">Dept Directives</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="stat-box box-payer h-100">
+        <div class="num">{{ ds.payer_directive_count | default(0) }}</div>
+        <div class="lbl">Payer Directives</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Situation Assessment ───────────────────────────────────────────────── -->
+  {% if brief.situation_assessment %}
+  <div class="card section-card">
+    <div class="card-header">Situation Assessment</div>
+    <div class="card-body">
+      <p class="mb-0" style="font-size:.95rem;line-height:1.7;color:#333">
+        {{ brief.situation_assessment }}
+      </p>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ── What the LLM received ─────────────────────────────────────────────── -->
+  <div class="card section-card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <span>What the LLM Read — Situation Brief (Stage 1 + Stage 2 context)</span>
+      <button class="btn btn-sm btn-outline-secondary"
+              data-bs-toggle="collapse" data-bs-target="#briefBox">
+        Toggle
+      </button>
+    </div>
+    <div class="card-body p-0 collapse show" id="briefBox">
+      <div class="brief-box">{{ report.situation_brief }}</div>
+    </div>
+  </div>
+
+  <!-- ── Immediate Actions ─────────────────────────────────────────────────── -->
+  {% set actions = brief.immediate_actions | default([]) %}
+  {% if actions %}
+  <div class="card section-card">
+    <div class="card-header">
+      Immediate Actions
+      <span class="badge bg-warning text-dark ms-1">{{ actions | length }}</span>
+      <small class="text-muted fw-normal ms-2">— act today</small>
+    </div>
+    <div class="card-body">
+      {% for a in actions %}
+      <div class="action-card">
+        <div class="action-header">
+          <div class="action-priority">{{ a.priority | default(loop.index) }}</div>
+          <div>
+            <div class="action-case">Case: {{ a.case_ref | default("N/A") }}</div>
+          </div>
+          <div class="action-owner ms-auto">{{ a.owner | default("—") }}</div>
+        </div>
+        <div class="action-body">
+          <div class="action-label">Action</div>
+          <div class="action-text mb-2">{{ a.action | default("—") }}</div>
+          <div class="action-label">Reason</div>
+          <div class="action-text" style="color:#555">{{ a.reason | default("—") }}</div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ── Department Directives ─────────────────────────────────────────────── -->
+  {% set dept_dirs = brief.department_directives | default([]) %}
+  {% if dept_dirs %}
+  <div class="card section-card">
+    <div class="card-header">
+      Department Directives
+      <span class="badge bg-primary ms-1">{{ dept_dirs | length }}</span>
+    </div>
+    <div class="card-body">
+      {% for d in dept_dirs %}
+      <div class="directive-card">
+        <div class="directive-header">
+          <span>{{ d.department | default("Unknown") }}</span>
+          {% if d.timeline %}
+          <span class="timeline-badge">{{ d.timeline }}</span>
+          {% endif %}
+        </div>
+        <div class="directive-body">
+          <div class="action-label">Finding</div>
+          <div class="action-text mb-2">{{ d.finding | default("—") }}</div>
+          <div class="action-label">Directive</div>
+          <div class="action-text" style="color:#1a5276;font-weight:600">
+            {{ d.directive | default("—") }}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ── Payer Directives ───────────────────────────────────────────────────── -->
+  {% set payer_dirs = brief.payer_directives | default([]) %}
+  {% if payer_dirs %}
+  <div class="card section-card">
+    <div class="card-header">
+      Payer Directives
+      <span class="badge bg-danger ms-1">{{ payer_dirs | length }}</span>
+    </div>
+    <div class="card-body">
+      {% for p in payer_dirs %}
+      <div class="directive-card">
+        <div class="directive-header payer-hdr">
+          <span>{{ p.payer | default("Unknown") }}</span>
+        </div>
+        <div class="directive-body">
+          <div class="action-label">Finding</div>
+          <div class="action-text mb-2">{{ p.finding | default("—") }}</div>
+          <div class="action-label">Directive</div>
+          <div class="action-text" style="color:#76448a;font-weight:600">
+            {{ p.directive | default("—") }}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ── Pipeline Feedback ─────────────────────────────────────────────────── -->
+  {% set pf = brief.pipeline_feedback | default({}) %}
+  {% if pf %}
+  <div class="card section-card">
+    <div class="card-header">Pipeline Feedback
+      <small class="text-muted fw-normal ms-2">— LLM's read on model health</small>
+    </div>
+    <div class="card-body">
+      {% set health = pf.model_health | default("HEALTHY") %}
+      <div class="mb-3">
+        <span class="fw-bold me-2">Model Health:</span>
+        {% if health == "HEALTHY" %}
+        <span class="health-healthy fw-bold">&#10003; HEALTHY</span>
+        {% elif health == "NEEDS_REVIEW" %}
+        <span class="health-review fw-bold">&#9888; NEEDS REVIEW</span>
+        {% else %}
+        <span class="health-retrain fw-bold">&#8635; RETRAIN RECOMMENDED</span>
+        {% endif %}
+      </div>
+
+      {% if pf.observations %}
+      <div class="mb-2">
+        <div class="action-label mb-1">Observations</div>
+        {% for obs in pf.observations %}
+        <div class="obs-item">{{ obs }}</div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      {% if pf.threshold_recommendations %}
+      <div class="mb-2">
+        <div class="action-label mb-1">Threshold Recommendations</div>
+        {% for rec in pf.threshold_recommendations %}
+        <div class="obs-item">{{ rec }}</div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      {% if pf.data_quality_flags %}
+      <div>
+        <div class="action-label mb-1">Data Quality Flags</div>
+        {% for flag in pf.data_quality_flags %}
+        <div class="obs-item flag">{{ flag }}</div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ── Executive Summary ─────────────────────────────────────────────────── -->
+  {% if brief.executive_summary %}
+  <div class="card section-card">
+    <div class="card-header">Executive Summary
+      <small class="text-muted fw-normal ms-2">— for senior management</small>
+    </div>
+    <div class="card-body p-0">
+      <div class="exec-box">{{ brief.executive_summary }}</div>
+    </div>
+  </div>
+  {% endif %}
+
+</div><!-- /container -->
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -380,9 +380,89 @@ ok(f"Latest tier-3 count     : {latest['metrics']['tier_distribution']['tier_3_i
 ok("model_registry.json saved to artifacts/")
 
 
+# ── Stage 15: AgentOps — Stage 2 daily report ────────────────────────────────
+
+section("STAGE 15 - AgentOps  (Stage 2: daily anomaly report)")
+
+from src.stage_2_agentops import AgentOpsRunner
+
+runner_s2 = AgentOpsRunner()
+s2_paths  = runner_s2.run(batch_df, source_name="dev_run_batch_20pct")
+
+ok(f"Stage 2 JSON report : {s2_paths['json_path']}")
+ok(f"Stage 2 markdown    : {s2_paths['md_path']}")
+
+import json as _json2
+
+with open(s2_paths["json_path"], encoding="utf-8") as _f2:
+    s2_report = _json2.load(_f2)
+
+s2_sum = s2_report["anomaly_summary"]
+ok(f"Tier 3 critical     : {s2_sum['tier_3_investigate_immediately']}")
+ok(f"Tier 2 review       : {s2_sum['tier_2_scheduled_review']}")
+ok(f"Tier 1 monitor      : {s2_sum['tier_1_monitor']}")
+ok(f"Overall anomaly rate: {s2_sum['overall_anomaly_rate_pct']}%")
+
+if s2_report.get("tier_3_cases"):
+    print(f"\n  Sample Tier 3 case (first one):")
+    c = s2_report["tier_3_cases"][0]
+    print(f"    patient_id      : {c.get('patient_id', 'N/A')}")
+    print(f"    department      : {c.get('department', 'N/A')}")
+    print(f"    charge_amount   : ${c.get('charge_amount_USD', 0):,.2f}")
+    print(f"    payment_amount  : ${c.get('payment_amount_USD', 0):,.2f}")
+    print(f"    rules_triggered : {c.get('rules_triggered', [])}")
+    print(f"    score_A / score_B: {c.get('score_A')} / {c.get('score_B')}")
+
+
+# ── Stage 16: Decision Making — Stage 3 stakeholder LLM ──────────────────────
+
+section("STAGE 16 - Decision Making  (Stage 3: stakeholder LLM via Ollama / llama3.2)")
+
+print(
+    "\n  NOTE: Stage 3 requires Ollama running locally."
+    "\n  If not installed: https://ollama.com  then  'ollama pull llama3.2'"
+    "\n  If Ollama is offline, Stage 3 falls back gracefully with a manual-review directive.\n"
+)
+
+from src.stage_3_decision import DecisionRunner
+
+runner_s3 = DecisionRunner()
+s3_paths  = runner_s3.run(s2_paths["json_path"])
+
+ok(f"Stage 3 JSON report : {s3_paths['json_path']}")
+ok(f"Stage 3 markdown    : {s3_paths['md_path']}")
+
+with open(s3_paths["json_path"], encoding="utf-8") as _f3:
+    s3_report = _json2.load(_f3)
+
+ds = s3_report.get("decision_summary", {})
+ok(f"Risk level          : {ds.get('risk_level', 'N/A')}")
+ok(f"Immediate actions   : {ds.get('immediate_action_count', 0)}")
+ok(f"Dept directives     : {ds.get('department_directive_count', 0)}")
+ok(f"Payer directives    : {ds.get('payer_directive_count', 0)}")
+
+brief = s3_report.get("decision_brief", {})
+exec_summary = brief.get("executive_summary", "")
+if exec_summary:
+    print(f"\n  Executive Summary (from LLM):")
+    for line in exec_summary.split(". "):
+        if line.strip():
+            print(f"    {line.strip()}.")
+
+actions = brief.get("immediate_actions", [])
+if actions:
+    print(f"\n  Immediate Actions ({len(actions)}):")
+    for a in actions[:3]:
+        print(f"    [{a.get('priority', '?')}] {a.get('action', '—')}")
+        print(f"         Owner  : {a.get('owner', '—')}")
+        print(f"         Reason : {a.get('reason', '—')[:90]}")
+
+
 # ── Done ──────────────────────────────────────────────────────────────────────
 
 section("ALL CHECKS COMPLETE")
-print("  Stage 1 MLOps — Ingestion + Validation + Drift + Transformation")
-print("                  + 3-Track Model Training + Threshold + Evaluation")
-print("                  + Inference (daily batch) + Model Registry\n")
+print("  Stage 1  MLOps        — Ingestion + Validation + Drift + Transformation")
+print("                          + 3-Track Model Training + Threshold + Evaluation")
+print("                          + Inference (daily batch) + Model Registry")
+print("  Stage 2  AgentOps     — Daily anomaly report (JSON + markdown)")
+print("  Stage 3  Decision LLM — Stakeholder decision brief (JSON + markdown)\n")
